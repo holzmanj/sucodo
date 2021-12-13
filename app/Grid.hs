@@ -24,6 +24,9 @@ instance Comonad Grid where
 instance Foldable Grid where
   foldMap f (Grid m _) = foldMap f m
 
+instance Traversable Grid where
+  sequenceA (Grid fm p) = (`Grid` p) <$> sequenceA fm
+
 -- | Extract all values in the same row as the focused cell.
 extractRow :: Grid a -> Vector a
 extractRow (Grid m (i, _)) = getRow i m
