@@ -38,6 +38,19 @@ fromIntList xs =
     m = M.fromList 9 9 (toTile <$> xs)
   in if length xs < 81 then error "Not enough elements!" else Grid m (1, 1)
 
+-- | Read a puzzle from a string containing the numbers 1 through 9 for cells
+-- that are filled in, and a 0 or '.' for cells that are empty.  All other
+-- characters are skipped over.
+fromString :: String -> Puzzle
+fromString s = Grid (M.fromList 9 9 tiles) (1, 1)
+ where
+  tiles = (`Tile` True) <$> take 81 (strToVals s)
+  strToVals [] = error "Not enough elements!"
+  strToVals (c : cs)
+    | c `elem` ['1' .. '9'] = Definitely (read $ pure c) : strToVals cs
+    | c == '0' || c == '.'  = Possibly [1 .. 9] : strToVals cs
+    | otherwise             = strToVals cs
+
 -- | Reduce a list of `Uncertain` values into only those which are definite.
 catDefinitely :: [Uncertain a] -> [a]
 catDefinitely [] = []

@@ -18,4 +18,5 @@ executable sucodo
     , comonad
     , matrix
     , vector
+    , time
     , optparse-applicative
