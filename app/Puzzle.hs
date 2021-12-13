@@ -1,7 +1,8 @@
 module Puzzle where
 
-import Control.Comonad (extract)
-import Data.List (delete, foldl')
+import Control.Comonad (extend, extract)
+import Data.Foldable (asum)
+import Data.List ((\\))
 import qualified Data.Matrix as M
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -57,33 +58,51 @@ tilesToCheck puzz =
     box = M.getMatrixAsVector (extractBox (3, 3) puzz)
   in V.toList $ row V.++ col V.++ box
 
--- | Restrict the possibilities of the focused tile by getting rid of values
--- which already definitely exist in the same row, column, and box.
-stepTile :: Puzzle -> Tile
+-- | Propagate the constraints of possible values for the focused tile based on
+-- the existing values in the same row, column, and box.  If a contradiction is
+-- found and the tile cannot be given any value, returns @Nothing@.
+stepTile :: Puzzle -> Maybe Tile
 stepTile puzz = case val of
-  Definitely _ -> Tile val False
-  Possibly ps ->
-    let
-      ps'  = foldl' (flip delete) ps existing
-      val' = case ps' of
-        []  -> error "Invalid puzzle, cannot be solved."
-        [i] -> Definitely i
-        _   -> Possibly ps'
-    in Tile val' (val /= val')
+  Definitely _  -> Just (Tile val False)
+  Possibly   ps -> case ps \\ existing of
+    []  -> Nothing
+    [i] -> mkTile (Definitely i)
+    ps' -> mkTile (Possibly ps')
  where
   val      = tileVal $ extract puzz
   existing = catDefinitely (tileVal <$> tilesToCheck puzz)
+  mkTile newV = Just (Tile newV (val /= newV))
 
 -- | Find the first tile with multiple possibilities and branch into a list of
--- puzzles where each assumes one of those possibilities to be definite.
---
--- If all tiles are definite, return a singleton list with the puzzle unchanged.
-branch :: Puzzle -> [Puzzle]
+-- possible puzzles where each assumes one of those possibile tiles to be
+-- definite.  If all tiles are definite, return a single definite puzzle.
+branch :: Puzzle -> Uncertain Puzzle
 branch puzz = branch' (focusFirstCell puzz)
  where
-  branch' pz@(Grid m pos) = case tileVal (extract pz) of
-    Definitely _  -> if isLastCell pz then [pz] else branch' (advanceCell pz)
-    Possibly   xs -> setDef pz <$> xs
+  branch' pz = case tileVal (extract pz) of
+    Definitely _ ->
+      if isLastCell pz then Definitely pz else branch' (advanceCell pz)
+    Possibly xs -> Possibly (setDef pz <$> xs)
   -- set the focused tile to some definite value
-  setDef (Grid m p) v = Grid (M.setElem (Tile (Definitely v) False) p m) p
+  setDef (Grid m p) v = Grid (M.setElem (Tile (Definitely v) True) p m) p
 
+-- | Attempt to solve the given puzzle.  If unsolvable, @Nothing@ is returned
+-- instead.
+solve :: Puzzle -> Maybe Puzzle
+solve puzz = do
+  puzz' <- sequenceA (extend stepTile puzz)
+  if any wasUpdated puzz'
+    then solve puzz'
+    else case branch puzz' of
+      Definitely b  -> if validSolution b then Just b else Nothing
+      Possibly   bs -> asum (solve <$> bs)
+
+-- | Checks if a given puzzle contains a valid solution, meaning each row,
+-- column, and box contains the numbers 1 through 9.
+validSolution :: Puzzle -> Bool
+validSolution puzz =
+  let
+    groups = V.toList <$> concat
+      [allRows puzz, allCols puzz, M.getMatrixAsVector <$> allBoxes (3, 3) puzz]
+    groupValid g = null $ (tileVal <$> g) \\ (Definitely <$> [1 .. 9])
+  in all groupValid groups

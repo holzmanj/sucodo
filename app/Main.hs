@@ -14,4 +14,6 @@ main = do
       txt <- readFile (head as)
       let ns   = read <$> concat (words <$> lines txt)
       let puzz = fromIntList ns
-      print $ until (not . any wasUpdated) (extend stepTile) puzz
+      case solve puzz of
+        Nothing    -> putStrLn "Puzzle is unsolvable"
+        Just puzz' -> print puzz'
