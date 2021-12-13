@@ -18,3 +18,4 @@ executable sucodo
     , comonad
     , matrix
     , vector
+    , optparse-applicative
