@@ -24,9 +24,11 @@ instance Comonad Grid where
 instance Foldable Grid where
   foldMap f (Grid m _) = foldMap f m
 
+-- | Extract all values in the same row as the focused cell.
 extractRow :: Grid a -> Vector a
 extractRow (Grid m (i, _)) = getRow i m
 
+-- | Extract all values in the same column as the focused cell.
 extractCol :: Grid a -> Vector a
 extractCol (Grid m (_, j)) = getCol j m
 

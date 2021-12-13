@@ -27,6 +27,9 @@ instance Show Tile where
 
 type Puzzle = Grid Tile
 
+-- | Create a sudoku puzzle from a list of integers.  List should contain 81
+-- elements in order from left to right, top to bottom, each being a number from
+-- 0 to 9 where 0 is an empty cell.
 fromIntList :: [Int] -> Puzzle
 fromIntList xs =
   let
@@ -34,6 +37,7 @@ fromIntList xs =
     m = M.fromList 9 9 (toTile <$> xs)
   in if length xs < 81 then error "Not enough elements!" else Grid m (1, 1)
 
+-- | Reduce a list of `Uncertain` values into only those which are definite.
 catDefinitely :: [Uncertain a] -> [a]
 catDefinitely [] = []
 catDefinitely (x : xs) =
@@ -43,6 +47,8 @@ catDefinitely (x : xs) =
       Definitely y -> y : ys
       _            -> ys
 
+-- | Extract a list of all of the `Tile`s in the same row, column, and box as
+-- the `Puzzle`'s focused cell.
 tilesToCheck :: Puzzle -> [Tile]
 tilesToCheck puzz =
   let
@@ -51,6 +57,8 @@ tilesToCheck puzz =
     box = M.getMatrixAsVector (extractBox (3, 3) puzz)
   in V.toList $ row V.++ col V.++ box
 
+-- | Restrict the possibilities of the focused tile by getting rid of values
+-- which already definitely exist in the same row, column, and box.
 stepTile :: Puzzle -> Tile
 stepTile puzz = case val of
   Definitely _ -> Tile val False
