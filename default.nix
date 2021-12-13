@@ -1,2 +1,2 @@
-{ nixpkgs ? import <nixpkgs> {} }:
-nixpkgs.pkgs.haskellPackages.callPackage ./sucodu.nix { }
+{ pkgs ? import <nixpkgs> {} }:
+pkgs.haskellPackages.callPackage ./sucodu.nix { }

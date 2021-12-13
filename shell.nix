@@ -1,2 +1,7 @@
-{ nixpkgs ? import <nixpkgs> {} }:
-(import ./default.nix { inherit nixpkgs; }).env
+{ pkgs ? import <nixpkgs> {} }:
+pkgs.mkShell {
+  buildInputs = [
+    (import ./default.nix { inherit pkgs; })
+    pkgs.cabal-install
+  ];
+}
