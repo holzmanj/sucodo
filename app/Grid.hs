@@ -45,10 +45,27 @@ extractBox (h, w) (Grid m (y, x)) = submatrix (r0 + 1) r1 (c0 + 1) c1 m
   c0 = ((x - 1) `div` w) * w
   c1 = c0 + w
 
+-- | Get a list of all rows in the grid
+allRows :: Grid a -> [Vector a]
+allRows (Grid m _) = flip getRow m <$> [1 .. nrows m]
+
+-- | Get a list of all columns in the grid
+allCols :: Grid a -> [Vector a]
+allCols (Grid m _) = flip getRow m <$> [1 .. ncols m]
+
+-- | Get a list of all boxes of a given size within the grid
+allBoxes :: (Int, Int) -> Grid a -> [Matrix a]
+allBoxes (h, w) (Grid m _) =
+  let
+    box y x = submatrix (y * h + 1) ((y + 1) * h) (x * w + 1) ((x + 1) * w) m
+    nx = ncols m `div` w
+    ny = nrows m `div` h
+  in box <$> [0 .. ny - 1] <*> [0 .. nx - 1]
+
 -- | Sets the focused cell to the top-left most one.
 focusFirstCell :: Grid a -> Grid a
 focusFirstCell (Grid m _) = Grid m (1, 1)
-  
+
 -- | Moves the focused cell one step to the right, or to the beginning
 -- of the next row if at the end of the current row.
 advanceCell :: Grid a -> Grid a
