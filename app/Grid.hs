@@ -41,3 +41,19 @@ extractBox (h, w) (Grid m (y, x)) = submatrix (r0 + 1) r1 (c0 + 1) c1 m
   r1 = r0 + h
   c0 = ((x - 1) `div` w) * w
   c1 = c0 + w
+
+-- | Sets the focused cell to the top-left most one.
+focusFirstCell :: Grid a -> Grid a
+focusFirstCell (Grid m _) = Grid m (1, 1)
+  
+-- | Moves the focused cell one step to the right, or to the beginning
+-- of the next row if at the end of the current row.
+advanceCell :: Grid a -> Grid a
+advanceCell g@(Grid m (x, y))
+  | isLastCell g = Grid m (1, 1)
+  | x == ncols m = Grid m (1, y + 1)
+  | otherwise    = Grid m (x + 1, y)
+
+-- | Checks if the grid's focused cell is the bottom-right most one.
+isLastCell :: Grid a -> Bool
+isLastCell (Grid m (x, y)) = x == ncols m && y == nrows m

@@ -74,3 +74,16 @@ stepTile puzz = case val of
   val      = tileVal $ extract puzz
   existing = catDefinitely (tileVal <$> tilesToCheck puzz)
 
+-- | Find the first tile with multiple possibilities and branch into a list of
+-- puzzles where each assumes one of those possibilities to be definite.
+--
+-- If all tiles are definite, return a singleton list with the puzzle unchanged.
+branch :: Puzzle -> [Puzzle]
+branch puzz = branch' (focusFirstCell puzz)
+ where
+  branch' pz@(Grid m pos) = case tileVal (extract pz) of
+    Definitely _  -> if isLastCell pz then [pz] else branch' (advanceCell pz)
+    Possibly   xs -> setDef pz <$> xs
+  -- set the focused tile to some definite value
+  setDef (Grid m p) v = Grid (M.setElem (Tile (Definitely v) False) p m) p
+
